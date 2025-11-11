@@ -1,0 +1,43 @@
+
+Target: Purchase
+
+Note on campaign timing: The Company has done two marketing campaigns, between days 25 and 50 (inclusive) and 75 and 90 (inclusive).
+- Campaign_Period == TRUE when Day ∈ [25, 50] or Day ∈ [75, 90].
+
+Columns
+-------
+Purchase: int {0,1}. 1 = purchase, 0 = no purchase.
+
+Age: int, ~18–65. User’s age.
+
+Gender: int {0,1}. Binary gender flag. 0 = male, 1 = female.
+
+Reviews_Read: int ≥0. Count of product reviews viewed in session.
+
+Price: numeric ≥0. Listed product price (euros).
+
+Discount: int [0–100]. Percentage discount on Price.
+
+Category: int {0,1,2,3,4}. Product category code.
+
+Items_In_Cart: int ≥0. Number of items present in the cart during session.
+
+Time_of_Day: factor {morning, afternoon, evening}. Session time bucket.
+
+Email_Interaction: int {0,1}. 1 if the user interacted with a marketing email in this session, or in the recorded past.
+
+Device_Type: factor {Mobile, Desktop, Tablet}. Access device for the session.
+
+Payment_Method: string. Reported historic payment method label (e.g., "Credit", "PayPal", "Bank", "Cash").
+
+Referral_Source: string. Traffic source label (e.g., "Direct", "Social_media", "Search_engine", "Email", "Ads").
+
+Socioeconomic_Status_Score: numeric. Socio-economic proxy; larger -> higher status.
+
+Engagement_Score: numeric. Session engagement proxy; larger -> more engaged.
+
+Session_ID: string. Unique session identifier.
+
+Day: int [1–100]. Day index of the session.
+
+Campaign_Period: logical {TRUE,FALSE}. TRUE iff Day ∈ [25,50] ∪ [75,90].
