@@ -1,0 +1,125 @@
+# ElectroShop Data Contract (Schema & Keys)
+
+columns:
+  Session_ID:
+    dtype: string
+    description: "Unique session identifier (globally unique)."
+
+  Day:
+    dtype: int
+    range: [1, 100]
+    description: "Day index of the session."
+
+  Purchase:
+    dtype: int
+    allowed: [0, 1]
+    description: "1 = purchase, 0 = no purchase."
+
+  Age:
+    dtype: int
+    range: [18, 65]
+    allow_null: true
+    description: "User age (null if unknown)."
+
+  Gender:
+    dtype: int
+    allowed: [0, 1]
+    allow_null: true
+    description: "0 = male, 1 = female (null if unknown)."
+
+  Reviews_Read:
+    dtype: int
+    ge: 0
+    allow_null: true
+    description: "Count of product reviews viewed in the session."
+
+  Price:
+    dtype: float
+    gt: 0
+    description: "Listed product price in euros (> 0)."
+
+  Discount:
+    dtype: int
+    range: [0, 100]
+    allow_null: true
+    description: "Percentage discount on Price."
+
+  Category:
+    dtype: int
+    allowed: [0, 1, 2, 3, 4]
+    description: "Product category code."
+
+  Items_In_Cart:
+    dtype: int
+    ge: 0
+    description: "Number of items in cart during session."
+
+  Time_of_Day:
+    dtype: category
+    allowed: ["morning", "afternoon", "evening"]
+    description: "Session time bucket."
+
+  Email_Interaction:
+    dtype: int
+    allowed: [0, 1]
+    description: "1 if user interacted with marketing email prior to session start."
+
+  Device_Type:
+    dtype: category
+    allowed: ["Mobile", "Desktop", "Tablet"]
+    description: "Access device for the session."
+
+  Payment_Method:
+    dtype: string
+    allow_null: true
+    description: "Historic payment method from prior sessions (not same-session checkout). Free-text label; canonicalize upstream if desired."
+    examples: ["Credit", "PayPal", "Bank", "Cash", "ApplePay", "Klarna", "Other"]
+
+  Referral_Source:
+    dtype: string
+    allow_null: true
+    description: "Traffic source label (free-text; canonicalize upstream if desired)."
+    examples: ["Direct", "Social_media", "Search_engine", "Email", "Ads", "Affiliate", "Referral", "Other"]
+
+
+  Socioeconomic_Status_Score:
+    dtype: float
+    ge: 0
+    allow_null: true
+    description: "Socio-economic proxy; higher = higher status."
+
+  Engagement_Score:
+    dtype: float
+    ge: 0
+    allow_null: true
+    description: "Session engagement proxy from pre-decision signals only."
+
+  Campaign_Period:
+    dtype: bool
+    derived_from: "Day"
+    derivation_rule: "TRUE iff Day in [25..50] or [75..90]"
+    description: "Campaign period flag (derived; do not use as independent source column)."
+
+constraints:
+  primary_keys:
+    - Session_ID
+  unique_within_day:
+    - Session_ID
+  categorical_strict: true           # reject unseen labels at validation time
+  finite_numbers_only: true          # no +/-inf or NaN for numeric (use nulls instead)
+
+leakage_policy:
+  pre_decision_only:
+    - Email_Interaction
+    - Engagement_Score
+    - Payment_Method
+  notes:
+    - "Payment_Method must be historical (from prior sessions)."
+    - "Email_Interaction must reflect interactions up to session start."
+    - "Engagement_Score must exclude any post-checkout or label-derived signals."
+
+quality_reports:
+  - reports/schema_key_violations.csv
+  - reports/nulls_overview.csv
+
+version: "1.0.0"
