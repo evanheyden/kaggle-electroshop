@@ -1,2 +1,2 @@
-check,column,violations,percentage
-null_constraint,Referral_Source,1973,14.663693794128577
+check,column,expected,violations,min_found
+ge,Price_Sine,>= 0,6427,-0.999999982915294

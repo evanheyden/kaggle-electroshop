@@ -28,6 +28,55 @@ print(f"Dropped {before - after} rows with null Session_ID.")
 assert df['Session_ID'].notna().all()
 assert not df['Session_ID'].duplicated().any(), "Session_ID must be globally unique."
 
+
+## Impute Payment_Method and Referral_Source from PM_RS_Combo
+# Check null counts before
+pm_null_before = df['Payment_Method'].isna().sum()
+rs_null_before = df['Referral_Source'].isna().sum()
+
+print("Nulls before:")
+print("  Payment_Method:", pm_null_before)
+print("  Referral_Source:", rs_null_before)
+
+# Sample combo values (optional quick check)
+print("\nPM_RS_Combo sample:", df['PM_RS_Combo'].dropna().head().tolist())
+
+# Rows where we can fill
+pm_null_with_combo = df[df['Payment_Method'].isna() & df['PM_RS_Combo'].notna()]
+rs_null_with_combo = df[df['Referral_Source'].isna() & df['PM_RS_Combo'].notna()]
+
+print("\nFillable from PM_RS_Combo:")
+print("  Payment_Method:", len(pm_null_with_combo))
+print("  Referral_Source:", len(rs_null_with_combo))
+
+# Extract values from PM_RS_Combo
+df['PM_from_combo'] = df['PM_RS_Combo'].astype('string').str.split(':', expand=True)[0]
+df['RS_from_combo'] = df['PM_RS_Combo'].astype('string').str.split(':', expand=True)[1]
+
+# Fill missing
+df['Payment_Method'] = df['Payment_Method'].fillna(df['PM_from_combo'])
+df['Referral_Source'] = df['Referral_Source'].fillna(df['RS_from_combo'])
+
+# Check null counts after
+pm_null_after = df['Payment_Method'].isna().sum()
+rs_null_after = df['Referral_Source'].isna().sum()
+
+print("\nNulls after:")
+print("  Payment_Method:", pm_null_after)
+print("  Referral_Source:", rs_null_after)
+
+# Cleanup
+df = df.drop(columns=['PM_from_combo', 'RS_from_combo'])
+
+# Final distributions
+print("\nFinal value counts:\n")
+print("Payment_Method:")
+print(df['Payment_Method'].value_counts(dropna=False))
+
+print("\nReferral_Source:")
+print(df['Referral_Source'].value_counts(dropna=False))
+
+
 # Clean Time_of_Day: case-insensitive standardization and fix '0'->'o'
 orig = df['Time_of_Day'].astype('string')
 normalized = orig.str.strip().str.lower().str.replace('0', 'o', regex=False)
@@ -117,7 +166,7 @@ print("Standardized Referral_Source values:")
 print(df['Referral_Source'].value_counts(dropna=False))
 
 # Drop Price_Sine and PM_RS_Combo (can reintroduce later if needed)
-df = df.drop(columns=['Price_Sine', 'PM_RS_Combo'])
+df = df.drop(columns=['PM_RS_Combo'])
 
 # Save imputed dataset
 imputed_path = root + "data/interim/train_dataset_M1_interim.csv"

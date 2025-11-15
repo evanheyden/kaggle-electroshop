@@ -53,7 +53,7 @@ columns:
 
   Items_In_Cart:
     dtype: int
-    ge: 
+    ge: 0
     allow_null: true
     description: "Number of items in cart during session."
 
@@ -112,6 +112,13 @@ columns:
     dtype: int
     allow_null: true
     description: "Unsure maybe AB tests classifier"
+
+  Price_Sine:
+    dtype: float
+    allow_null: true
+    ge: -1
+    le: 1
+    description: "Unsure maybe some price transformation"
 
 
 constraints:
