@@ -1,0 +1,7 @@
+check,column,violations,percentage
+null_constraint,Price,616,4.578223708658491
+null_constraint,Category,280,2.0810107766629504
+null_constraint,Items_In_Cart,279,2.0735785953177257
+null_constraint,Time_of_Day,271,2.014121144555927
+null_constraint,Email_Interaction,257,1.9100706057227796
+null_constraint,Device_Type,271,2.014121144555927

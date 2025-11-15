@@ -5,6 +5,8 @@ Step 1: Assert uniqueness and validate domains according to data_contract.yaml
 Author: Erik (Data Quality & Leakage Lead)
 """
 
+import argparse
+import sys
 import pandas as pd
 import numpy as np
 import yaml
@@ -505,29 +507,74 @@ class SchemaValidator:
             logger.info("No violations to report")
 
 
+def _resolve_contract_path(project_root: Path, explicit: str | None) -> Path:
+     """Find a contract path (explicit, configs/data_contract.yaml, or data_contract.yaml)."""
+     if explicit:
+         p = Path(explicit)
+         if not p.exists():
+             raise FileNotFoundError(f"Contract not found: {p}")
+         return p
+     candidates = [
+         project_root / "configs" / "data_contract.yaml",
+         project_root / "data_contract.yaml",
+     ]
+     for p in candidates:
+         if p.exists():
+             return p
+     raise FileNotFoundError("Could not find data_contract.yaml in configs/ or project root.")
+
+
 def main():
     """Main validation script."""
-    # Paths
+    # # Paths
+    # project_root = Path(__file__).parent.parent
+    # contract_path = project_root / "configs" / "data_contract.yaml"
+    # train_path = project_root / "data" / "raw" / "dsba-m-1-challenge-purchase-prediction" / "train_dataset_M1_with_id.csv"
+    # reports_dir = project_root / "reports"
+    # reports_dir.mkdir(exist_ok=True)
+    
+    # # Load data
+    # logger.info(f"Loading data from {train_path}")
+    # df = pd.read_csv(train_path)
+    # logger.info(f"Loaded {len(df)} rows, {len(df.columns)} columns")
+    
+    # # Validate
+    # validator = SchemaValidator(str(contract_path))
+    # results = validator.validate_all(df)
+
+    parser = argparse.ArgumentParser(description="Schema & Keys Validation for ElectroShop")
+    parser.add_argument("-d", "--data", required=True, help="Path to CSV to validate")
+    parser.add_argument("-c", "--contract", default=None, help="Path to data_contract.yaml (optional)")
+    parser.add_argument("-r", "--reports-dir", default=None, help="Directory to save reports (defaults to ./reports)")
+    parser.add_argument("-t", "--tag", default=None, help="Optional tag used in report filenames (defaults to CSV stem)")
+    args = parser.parse_args()
+
     project_root = Path(__file__).parent.parent
-    contract_path = project_root / "configs" / "data_contract.yaml"
-    train_path = project_root / "data" / "raw" / "dsba-m-1-challenge-purchase-prediction" / "train_dataset_M1_with_id.csv"
-    reports_dir = project_root / "reports"
-    reports_dir.mkdir(exist_ok=True)
-    
+    data_path = Path(args.data)
+    if not data_path.exists():
+        raise FileNotFoundError(f"Dataset not found: {data_path}")
+
+    contract_path = _resolve_contract_path(project_root, args.contract)
+    reports_dir = Path(args.reports_dir) if args.reports_dir else (project_root / "reports")
+    reports_dir.mkdir(parents=True, exist_ok=True)
+
+    tag = args.tag or data_path.stem
+
     # Load data
-    logger.info(f"Loading data from {train_path}")
-    df = pd.read_csv(train_path)
+    logger.info(f"Loading data from {data_path}")
+    df = pd.read_csv(data_path)
     logger.info(f"Loaded {len(df)} rows, {len(df.columns)} columns")
-    
+
     # Validate
     validator = SchemaValidator(str(contract_path))
-    results = validator.validate_all(df)
+    results = validator.validate_all(df)    
     
     # Print summary
     validator.print_summary(results)
     
     # Save reports
-    violations_path = reports_dir / "schema_key_violations.csv"
+    # violations_path = reports_dir / "schema_key_violations.csv"
+    violations_path = reports_dir / f"schema_key_violations__{tag}.csv"
     validator.save_violations_report(str(violations_path))
     
     # Save null overview
@@ -542,9 +589,14 @@ def main():
         for col, stats in null_stats.items()
     ]).sort_values('null_percentage', ascending=False)
     
-    null_overview_path = reports_dir / "nulls_overview.csv"
+    # null_overview_path = reports_dir / "nulls_overview.csv"
+    null_overview_path = reports_dir / f"nulls_overview__{tag}.csv"
     null_df.to_csv(null_overview_path, index=False)
     logger.info(f"Null overview saved to {null_overview_path}")
+
+    # Non-zero exit on violations (useful for CI)
+    exit_code = 0 if len(validator.violations) == 0 else 1
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":

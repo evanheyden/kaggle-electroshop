@@ -36,6 +36,7 @@ columns:
   Price:
     dtype: float
     gt: 0
+    allow_null: true
     description: "Listed product price in euros (> 0)."
 
   Discount:
@@ -47,26 +48,31 @@ columns:
   Category:
     dtype: int
     allowed: [0, 1, 2, 3, 4]
+    allow_null: true
     description: "Product category code."
 
   Items_In_Cart:
     dtype: int
-    ge: 0
+    ge: 
+    allow_null: true
     description: "Number of items in cart during session."
 
   Time_of_Day:
     dtype: category
     allowed: ["morning", "afternoon", "evening"]
+    allow_null: true
     description: "Session time bucket."
 
   Email_Interaction:
     dtype: int
     allowed: [0, 1]
+    allow_null: true
     description: "1 if user interacted with marketing email prior to session start."
 
   Device_Type:
     dtype: category
     allowed: ["Mobile", "Desktop", "Tablet"]
+    allow_null: true
     description: "Access device for the session."
 
   Payment_Method:
@@ -99,6 +105,12 @@ columns:
     derived_from: "Day"
     derivation_rule: "TRUE iff Day in [25..50] or [75..90]"
     description: "Campaign period flag (derived; do not use as independent source column)."
+  
+  AB_Bucket:
+    dtype: int
+    allow_null: true
+    description: "Unsure maybe AB tests classifier"
+
 
 constraints:
   primary_keys:
