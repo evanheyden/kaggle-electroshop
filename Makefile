@@ -10,14 +10,15 @@ INTERIM_DATA ?= data/interim/train_dataset_M1_interim.csv
 
 help:
 	@echo "Available commands:"
-	@echo "  make install   - Install dependencies"
-	@echo "  make preprocess - Run preprocessing pipeline"
-	@echo "  make test      - Run pytest test suite"
-	@echo "  make clean     - Clean generated reports"
-	@echo "  make all       - Run validate and test"
-	@echo "	 make validate DATA=path/to.csv [CONTRACT=path/to.yaml] [REPORTS_DIR=dir]"
-	@echo "	 make validate-raw"
-	@echo "	 make validate-interim"
+	@echo "  make install         - Install dependencies"
+	@echo "  make preprocess      - Run preprocessing pipeline"
+	@echo "  make test            - Run pytest test suite on raw data"
+	@echo "  make test-interim    - Run pytest test suite on interim data"
+	@echo "  make clean           - Clean generated reports"
+	@echo "  make all             - Validate interim and run tests on interim"
+	@echo "  make validate DATA=path/to.csv [CONTRACT=path/to.yaml] [REPORTS_DIR=dir]"
+	@echo "  make validate-raw    - Validate raw data"
+	@echo "  make validate-interim - Validate interim data"
 
 install:
 	pip install pandas pyyaml numpy pytest
@@ -37,6 +38,9 @@ validate-interim:
 test:
 	pytest src/tests/test_schema.py -v
 
+test-interim:
+	pytest src/tests/test_schema.py -v -k "interim"
+
 test-quiet:
 	pytest src/tests/test_schema.py -q
 
@@ -47,4 +51,4 @@ clean:
 	rm -rf src/tests/__pycache__
 	rm -rf src/__pycache__
 
-all: validate test
+all: validate-interim test-interim

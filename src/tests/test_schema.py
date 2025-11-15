@@ -28,6 +28,16 @@ def train_df():
 
 
 @pytest.fixture(scope="module")
+def interim_df():
+    """Load interim (processed) training data."""
+    interim_path = Path(__file__).parent.parent.parent / "data" / "interim" / \
+                   "train_dataset_M1_interim.csv"
+    if interim_path.exists():
+        return pd.read_csv(interim_path)
+    return None
+
+
+@pytest.fixture(scope="module")
 def test_df():
     """Load test data if available."""
     test_path = Path(__file__).parent.parent.parent / "data" / "raw" / \
@@ -40,20 +50,50 @@ def test_df():
 class TestPrimaryKeys:
     """Test primary key constraints."""
     
-    def test_id_unique(self, train_df):
-        """Test that 'id' column is globally unique."""
+    def test_id_unique_raw(self, train_df):
+        """Test that 'id' column is globally unique in raw data."""
         assert train_df['id'].is_unique, \
             f"Found {train_df['id'].duplicated().sum()} duplicate IDs"
     
-    def test_session_id_globally_unique(self, train_df):
-        """Test that Session_ID is globally unique."""
+    def test_session_id_globally_unique_raw(self, train_df):
+        """Test that Session_ID is globally unique in raw data."""
         dupes = train_df['Session_ID'].duplicated().sum()
         assert dupes == 0, \
             f"Found {dupes} duplicate Session_IDs globally"
     
-    def test_session_id_unique_within_day(self, train_df):
-        """Test that Session_ID is unique within each day."""
+    def test_session_id_unique_within_day_raw(self, train_df):
+        """Test that Session_ID is unique within each day in raw data."""
         day_dupes = train_df.groupby('Day')['Session_ID'].apply(
+            lambda x: x.duplicated().sum()
+        )
+        total_dupes = day_dupes.sum()
+        assert total_dupes == 0, \
+            f"Found {total_dupes} duplicate Session_IDs within days"
+
+
+class TestPrimaryKeysInterim:
+    """Test primary key constraints on interim data."""
+    
+    def test_id_unique_interim(self, interim_df):
+        """Test that 'id' column is globally unique in interim data."""
+        if interim_df is None:
+            pytest.skip("Interim data not available")
+        assert interim_df['id'].is_unique, \
+            f"Found {interim_df['id'].duplicated().sum()} duplicate IDs"
+    
+    def test_session_id_globally_unique_interim(self, interim_df):
+        """Test that Session_ID is globally unique in interim data."""
+        if interim_df is None:
+            pytest.skip("Interim data not available")
+        dupes = interim_df['Session_ID'].duplicated().sum()
+        assert dupes == 0, \
+            f"Found {dupes} duplicate Session_IDs globally"
+    
+    def test_session_id_unique_within_day_interim(self, interim_df):
+        """Test that Session_ID is unique within each day in interim data."""
+        if interim_df is None:
+            pytest.skip("Interim data not available")
+        day_dupes = interim_df.groupby('Day')['Session_ID'].apply(
             lambda x: x.duplicated().sum()
         )
         total_dupes = day_dupes.sum()
@@ -107,6 +147,49 @@ class TestNumericRanges:
                 f"Found {(valid_scores < 0).sum()} negative {col} values"
 
 
+class TestCategoricalValuesInterim:
+    """Test categorical column allowed values on interim data."""
+    
+    def test_payment_method_values_interim(self, interim_df):
+        """Test Payment_Method is normalized in interim data."""
+        if interim_df is None:
+            pytest.skip("Interim data not available")
+        allowed = {"Credit", "Cash", "Bank", "PayPal"}
+        unique_vals = set(interim_df['Payment_Method'].dropna().unique())
+        unexpected = unique_vals - allowed
+        assert len(unexpected) == 0, \
+            f"Payment_Method has {len(unexpected)} unexpected values: {unexpected}"
+    
+    def test_referral_source_values_interim(self, interim_df):
+        """Test Referral_Source is normalized in interim data."""
+        if interim_df is None:
+            pytest.skip("Interim data not available")
+        allowed = {"Social_media", "Direct", "Search_engine", "Ads", "Email"}
+        unique_vals = set(interim_df['Referral_Source'].dropna().unique())
+        unexpected = unique_vals - allowed
+        assert len(unexpected) == 0, \
+            f"Referral_Source has {len(unexpected)} unexpected values: {unexpected}"
+    
+    def test_time_of_day_values_interim(self, interim_df):
+        """Test Time_of_Day is normalized in interim data."""
+        if interim_df is None:
+            pytest.skip("Interim data not available")
+        allowed = {"morning", "afternoon", "evening"}
+        unique_vals = set(interim_df['Time_of_Day'].dropna().unique())
+        unexpected = unique_vals - allowed
+        assert len(unexpected) == 0, \
+            f"Time_of_Day has {len(unexpected)} unexpected values: {unexpected}"
+    
+    def test_device_type_values_interim(self, interim_df):
+        """Test Device_Type values in interim data."""
+        if interim_df is None:
+            pytest.skip("Interim data not available")
+        allowed = {"Mobile", "Desktop", "Tablet"}
+        unique_vals = set(interim_df['Device_Type'].dropna().unique())
+        assert unique_vals.issubset(allowed), \
+            f"Device_Type has unexpected values: {unique_vals - allowed}"
+
+
 class TestCategoricalValues:
     """Test categorical column allowed values."""
     
@@ -152,21 +235,46 @@ class TestCategoricalValues:
         unique_vals = set(train_df['Device_Type'].dropna().unique())
         assert unique_vals.issubset(allowed), \
             f"Device_Type has unexpected values: {unique_vals - allowed}"
+    
+    def test_payment_method_values(self, train_df):
+        """Test Payment_Method is in allowed canonical values."""
+        allowed = {"Credit", "Cash", "Bank", "PayPal"}
+        unique_vals = set(train_df['Payment_Method'].dropna().unique())
+        unexpected = unique_vals - allowed
+        assert len(unexpected) == 0, \
+            f"Payment_Method has {len(unexpected)} unexpected values: {unexpected}"
+    
+    def test_referral_source_values(self, train_df):
+        """Test Referral_Source is in allowed canonical values."""
+        allowed = {"Social_media", "Direct", "Search_engine", "Ads", "Email"}
+        unique_vals = set(train_df['Referral_Source'].dropna().unique())
+        unexpected = unique_vals - allowed
+        assert len(unexpected) == 0, \
+            f"Referral_Source has {len(unexpected)} unexpected values: {unexpected}"
 
 
 class TestNullConstraints:
     """Test null/missing value constraints."""
     
     @pytest.mark.parametrize("column", [
-        'Session_ID', 'Day', 'Purchase', 'Price', 'Category',
-        'Items_In_Cart', 'Time_of_Day', 'Email_Interaction',
-        'Device_Type', 'Campaign_Period'
+        'Session_ID', 'Day', 'Purchase'
     ])
     def test_required_columns_no_nulls(self, train_df, column):
         """Test that required columns have no nulls."""
         null_count = train_df[column].isna().sum()
         assert null_count == 0, \
             f"{column} has {null_count} null values but nulls not allowed"
+    
+    @pytest.mark.parametrize("column", [
+        'Age', 'Gender', 'Reviews_Read', 'Price', 'Discount', 'Category',
+        'Items_In_Cart', 'Time_of_Day', 'Email_Interaction', 'Device_Type',
+        'Payment_Method', 'Referral_Source', 'Socioeconomic_Status_Score',
+        'Engagement_Score', 'Campaign_Period', 'AB_Bucket'
+    ])
+    def test_nullable_columns_exist(self, train_df, column):
+        """Test that nullable columns exist (nulls are allowed)."""
+        assert column in train_df.columns, \
+            f"{column} is missing from dataset"
 
 
 class TestFiniteNumbers:

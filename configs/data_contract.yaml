@@ -78,12 +78,14 @@ columns:
   Payment_Method:
     dtype: string
     allow_null: true
+    allowed: ['Credit', 'Cash', 'Bank', 'PayPal']
     description: "Historic payment method from prior sessions (not same-session checkout). Free-text label; canonicalize upstream if desired."
     examples: ["Credit", "PayPal", "Bank", "Cash", "ApplePay", "Klarna", "Other"]
 
   Referral_Source:
     dtype: string
     allow_null: true
+    allowed: ['Social_media', 'Direct', 'Search_engine', 'Ads', 'Email']
     description: "Traffic source label (free-text; canonicalize upstream if desired)."
     examples: ["Direct", "Social_media", "Search_engine", "Email", "Ads", "Affiliate", "Referral", "Other"]
 
