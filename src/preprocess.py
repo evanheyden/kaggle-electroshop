@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import argparse
 
-def preprocess_dataset(input_path: str, output_path: str, dataset_name: str = "dataset"):
+def preprocess_dataset(input_path: str, output_path: str, dataset_name: str = "dataset", is_train: bool = True):
     """
     Preprocess a dataset (train or test) with the same transformations.
     
@@ -11,6 +11,7 @@ def preprocess_dataset(input_path: str, output_path: str, dataset_name: str = "d
         input_path: Path to the raw CSV file
         output_path: Path to save the preprocessed CSV file
         dataset_name: Name of the dataset (for logging purposes)
+        is_train: Whether this is the training dataset (affects Session_ID handling)
     """
     print(f"\n{'='*60}")
     print(f"Processing {dataset_name}")
@@ -27,19 +28,24 @@ def preprocess_dataset(input_path: str, output_path: str, dataset_name: str = "d
     df['Campaign_Period'] = df['Day'].between(25, 50) | df['Day'].between(75, 90)
     df['Campaign_Period'] = df['Campaign_Period'].astype(bool)
 
-    # # sanity check
-    # after_recompute = int(df['Campaign_Period'].sum())
-    # print("Before vs after", before_recompute, after_recompute)
+    # sanity check
+    after_recompute = int(df['Campaign_Period'].sum())
+    print("Before vs after", before_recompute, after_recompute)
 
-    # # Drop rows with null Session_ID (potentially impute surrogate Session_IDs later)
-    # before = len(df)
-    # df = df[df['Session_ID'].notna()].copy()
-    # df['Session_ID'] = df['Session_ID'].astype('string').str.strip()
-    # after = len(df)
+    # Drop rows with null Session_ID (only for train dataset)
+    if is_train:
+        before = len(df)
+        df = df[df['Session_ID'].notna()].copy()
+        df['Session_ID'] = df['Session_ID'].astype('string').str.strip()
+        after = len(df)
 
-    # print(f"Dropped {before - after} rows with null Session_ID.")
-    # assert df['Session_ID'].notna().all()
-    # assert not df['Session_ID'].duplicated().any(), "Session_ID must be globally unique."
+        print(f"Dropped {before - after} rows with null Session_ID.")
+        assert df['Session_ID'].notna().all()
+        assert not df['Session_ID'].duplicated().any(), "Session_ID must be globally unique."
+    else:
+        # For test dataset, keep all rows but clean Session_ID where present
+        df['Session_ID'] = df['Session_ID'].astype('string').str.strip()
+        print(f"Test dataset: kept all rows, Session_ID cleaned where present.")
 
 
     ## Impute Payment_Method and Referral_Source from PM_RS_Combo
@@ -209,8 +215,13 @@ if __name__ == "__main__":
         default="dataset",
         help="Name of the dataset (for logging)"
     )
+    parser.add_argument(
+        "--is-train",
+        action="store_true",
+        help="Flag to indicate this is the training dataset"
+    )
     
     args = parser.parse_args()
     
     # Run preprocessing
-    preprocess_dataset(args.input, args.output, args.name)
+    preprocess_dataset(args.input, args.output, args.name, args.is_train)

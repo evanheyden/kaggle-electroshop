@@ -33,7 +33,7 @@ install:
 	pip install pandas pyyaml numpy pytest
 
 preprocess-train:
-	$(PYTHON) src/preprocess.py --input "$(RAW_TRAIN)" --output "$(INTERIM_TRAIN)" --name "Train Dataset"
+	$(PYTHON) src/preprocess.py --input "$(RAW_TRAIN)" --output "$(INTERIM_TRAIN)" --name "Train Dataset" --is-train
 
 preprocess-test:
 	$(PYTHON) src/preprocess.py --input "$(RAW_TEST)" --output "$(INTERIM_TEST)" --name "Test Dataset"
