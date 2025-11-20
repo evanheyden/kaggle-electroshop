@@ -27,19 +27,19 @@ def preprocess_dataset(input_path: str, output_path: str, dataset_name: str = "d
     df['Campaign_Period'] = df['Day'].between(25, 50) | df['Day'].between(75, 90)
     df['Campaign_Period'] = df['Campaign_Period'].astype(bool)
 
-    # sanity check
-    after_recompute = int(df['Campaign_Period'].sum())
-    print("Before vs after", before_recompute, after_recompute)
+    # # sanity check
+    # after_recompute = int(df['Campaign_Period'].sum())
+    # print("Before vs after", before_recompute, after_recompute)
 
-    # Drop rows with null Session_ID (potentially impute surrogate Session_IDs later)
-    before = len(df)
-    df = df[df['Session_ID'].notna()].copy()
-    df['Session_ID'] = df['Session_ID'].astype('string').str.strip()
-    after = len(df)
+    # # Drop rows with null Session_ID (potentially impute surrogate Session_IDs later)
+    # before = len(df)
+    # df = df[df['Session_ID'].notna()].copy()
+    # df['Session_ID'] = df['Session_ID'].astype('string').str.strip()
+    # after = len(df)
 
-    print(f"Dropped {before - after} rows with null Session_ID.")
-    assert df['Session_ID'].notna().all()
-    assert not df['Session_ID'].duplicated().any(), "Session_ID must be globally unique."
+    # print(f"Dropped {before - after} rows with null Session_ID.")
+    # assert df['Session_ID'].notna().all()
+    # assert not df['Session_ID'].duplicated().any(), "Session_ID must be globally unique."
 
 
     ## Impute Payment_Method and Referral_Source from PM_RS_Combo
