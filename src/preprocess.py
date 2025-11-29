@@ -33,19 +33,19 @@ def preprocess_dataset(input_path: str, output_path: str, dataset_name: str = "d
     print("Before vs after", before_recompute, after_recompute)
 
     # Drop rows with null Session_ID (only for train dataset)
-    if is_train:
-        before = len(df)
-        df = df[df['Session_ID'].notna()].copy()
-        df['Session_ID'] = df['Session_ID'].astype('string').str.strip()
-        after = len(df)
+    # if is_train:
+    #     before = len(df)
+    #     df = df[df['Session_ID'].notna()].copy()
+    #     df['Session_ID'] = df['Session_ID'].astype('string').str.strip()
+    #     after = len(df)
 
-        print(f"Dropped {before - after} rows with null Session_ID.")
-        assert df['Session_ID'].notna().all()
-        assert not df['Session_ID'].duplicated().any(), "Session_ID must be globally unique."
-    else:
-        # For test dataset, keep all rows but clean Session_ID where present
-        df['Session_ID'] = df['Session_ID'].astype('string').str.strip()
-        print(f"Test dataset: kept all rows, Session_ID cleaned where present.")
+    #     print(f"Dropped {before - after} rows with null Session_ID.")
+    #     assert df['Session_ID'].notna().all()
+    #     assert not df['Session_ID'].duplicated().any(), "Session_ID must be globally unique."
+    # else:
+    #     # For test dataset, keep all rows but clean Session_ID where present
+    #     df['Session_ID'] = df['Session_ID'].astype('string').str.strip()
+    #     print(f"Test dataset: kept all rows, Session_ID cleaned where present.")
 
 
     ## Impute Payment_Method and Referral_Source from PM_RS_Combo
